@@ -240,28 +240,16 @@ void NightbotAuth::onNewConnection()
 		QString method = requestParts[0];
 		QString path = requestParts[1];
 
-		// Decodifica a URL: substitui '+' por espaço e depois decodifica o resto.
-		QString tempPath = path;
-		tempPath.replace('+', ' ');
-		QString decodedPath = QUrl::fromPercentEncoding(tempPath.toUtf8());
-		QUrl url(decodedPath);
-		QUrlQuery query(url);
-		auto build_response_page = [](const QString &title,
-						const QString &body,
-						int close_timeout_ms = 5000) {
-			return QString(
-				"<!DOCTYPE html><html><head><title>%1</title></head><body style='font-family: sans-serif; background-color: #2d2d2d; color: #f0f0f0; text-align: center; padding-top: 50px;'>"
-				"%2"
-				"<script>setTimeout(function() { window.close(); }, %3);</script></body></html>")
-				.arg(title, body, QString::number(close_timeout_ms));
-		};
-
 		// Lida com a requisição POST do backend com os tokens
 		if (method == "POST" && path == "/token") {
 			int bodyIndex = request.indexOf("\r\n\r\n");
 			if (bodyIndex == -1) {
+				// Corpo da requisição não encontrado
+				QString httpResponse = "HTTP/1.1 400 Bad Request\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
+				clientSocket->write(httpResponse.toUtf8());
 				clientSocket->disconnectFromHost();
-				return;
+				http_server->close();
+				return; // Adicionado para clareza
 			}
 			QString body = request.mid(bodyIndex + 4);
 
@@ -299,40 +287,11 @@ void NightbotAuth::onNewConnection()
 					clientSocket->write(httpResponse.toUtf8());
 				}
 			}
-		}
-		// Lida com a requisição GET de erro vinda do backend
-		else if (method == "GET" && query.hasQueryItem("error")) {
-			QString error_reason = query.queryItemValue("error_description");
-			if (error_reason.isEmpty())
-				error_reason = query.queryItemValue("error");
-
-			blog(LOG_WARNING, "[Nightbot SR/Auth] Authentication failed with error: %s", error_reason.toUtf8().constData());
-
-			QString error_body =
-				QString(obs_module_text("Auth.Page.Error.Message"))
-					.arg(error_reason);
-			QString errorPage = build_response_page(
-				obs_module_text("Auth.Page.Title"),
-				QString(obs_module_text("Auth.Page.Error.Title")) + error_body,
-				10000); // Fecha a janela em 10 segundos
-
-			QString httpResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html; charset=utf-8\r\n\r\n" + errorPage;
-			clientSocket->write(httpResponse.toUtf8());
-			emit authenticationFinished(false);
-		}
-		// Lida com requisições OPTIONS (pre-flight) para CORS
-		else if (method == "OPTIONS") {
-			QString httpResponse = "HTTP/1.1 204 No Content\r\n"
-					       "Access-Control-Allow-Origin: *\r\n"
-					       "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n"
-					       "Access-Control-Allow-Headers: Content-Type\r\n"
-					       "Access-Control-Max-Age: 86400\r\n"
-					       "\r\n";
-			clientSocket->write(httpResponse.toUtf8());
-		}
-		else {
-			// Responde a qualquer outra requisição (ex: /favicon.ico)
-			QString httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
+		} else {
+			// Responde a qualquer outra requisição inesperada
+			blog(LOG_WARNING, "[Nightbot SR/Auth] Received unexpected request: %s %s",
+			     method.toUtf8().constData(), path.toUtf8().constData());
+			QString httpResponse = "HTTP/1.1 404 Not Found\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
 			clientSocket->write(httpResponse.toUtf8());
 		}
 		clientSocket->disconnectFromHost();
