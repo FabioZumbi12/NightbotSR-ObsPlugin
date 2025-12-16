@@ -10,9 +10,9 @@
 
 // Nomes estáticos para as propriedades de configuração
 namespace Setting {
-	static const char *AccessToken = "access_token";
-	static const char *RefreshToken = "refresh_token";
-	static const char *UserName = "user_name";
+	inline const char *AccessToken = "access_token";
+	inline const char *RefreshToken = "refresh_token";
+	inline const char *UserName = "user_name";
 } // namespace Setting
 
 class SettingsManager {

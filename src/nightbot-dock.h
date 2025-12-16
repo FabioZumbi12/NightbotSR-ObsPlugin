@@ -7,7 +7,7 @@ class NightbotDock : public QWidget {
 	Q_OBJECT
 
 public:
-    explicit NightbotDock(QWidget *parent = nullptr);
+    explicit NightbotDock();
 
 };
 

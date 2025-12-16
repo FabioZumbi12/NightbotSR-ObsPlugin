@@ -12,9 +12,9 @@
 #include <QTimer>
 
 #include "SettingsManager.h"
-
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 
 static const char *BACKEND_BASE_URL =
 	"https://6000-firebase-studio-1765863731028.cluster-r7kbxfo3fnev2vskbkhhphetq6.cloudworkstations.dev";
@@ -116,9 +116,11 @@ bool NightbotAuth::RefreshToken()
 	std::string refresh_url_str = std::string(BACKEND_BASE_URL) + "/api/refresh-token";
 	const char *refresh_url = refresh_url_str.c_str();
 
-	json request_body;
-	request_body["refresh_token"] = refresh_token;
-	std::string postFields = request_body.dump();
+	QJsonObject request_body;
+	request_body["refresh_token"] = QString::fromStdString(refresh_token);
+	QJsonDocument doc(request_body);
+	std::string postFields =
+		doc.toJson(QJsonDocument::Compact).toStdString();
 
 	curl_easy_setopt(curl, CURLOPT_URL, refresh_url);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
@@ -139,31 +141,40 @@ bool NightbotAuth::RefreshToken()
 		blog(LOG_ERROR, "[Nightbot SR/Auth] Token refresh request failed: %s",
 		     curl_easy_strerror(res));
 	} else if (http_code >= 200 && http_code < 300) {
-		try {
-			json data = json::parse(readBuffer);
-			if (data.contains("access_token")) {
-				access_token = data["access_token"];
+		QJsonParseError parseError;
+		QJsonDocument doc = QJsonDocument::fromJson(
+			QByteArray::fromStdString(readBuffer), &parseError);
+
+		if (doc.isNull()) {
+			blog(LOG_ERROR,
+			     "[Nightbot SR/Auth] Failed to parse token refresh response: %s",
+			     parseError.errorString().toUtf8().constData());
+		} else {
+			QJsonObject data = doc.object();
+			if (data.contains("access_token") &&
+			    data["access_token"].isString()) {
+				access_token =
+					data["access_token"].toString().toStdString();
 				SettingsManager::get().SetAccessToken(access_token);
 
 				// Opcional: O servidor pode retornar um novo refresh_token
-				if (data.contains("refresh_token")) {
-					refresh_token = data["refresh_token"];
+				if (data.contains("refresh_token") &&
+				    data["refresh_token"].isString()) {
+					refresh_token = data["refresh_token"]
+							      .toString()
+							      .toStdString();
 					SettingsManager::get().SetRefreshToken(
 						refresh_token);
 				}
+				SettingsManager::get().Save();
 
 				blog(LOG_INFO,
 				     "[Nightbot SR/Auth] Token refreshed successfully.");
-
 				success = true;
 			} else {
 				blog(LOG_WARNING,
 				     "[Nightbot SR/Auth] Token refresh response is missing 'access_token'.");
 			}
-		} catch (const json::parse_error &e) {
-			blog(LOG_ERROR,
-			     "[Nightbot SR/Auth] Failed to parse token refresh response: %s",
-			     e.what());
 		}
 	} else {
 		blog(LOG_WARNING,
@@ -184,6 +195,7 @@ void NightbotAuth::ClearTokens()
 	SettingsManager::get().SetAccessToken("");
 	SettingsManager::get().SetRefreshToken("");
 	SettingsManager::get().SetUserName("");
+	SettingsManager::get().Save();
 }
 
 bool NightbotAuth::IsAuthenticated()
@@ -253,29 +265,39 @@ void NightbotAuth::onNewConnection()
 			}
 			QString body = request.mid(bodyIndex + 4);
 
-			try {
-				json data = json::parse(body.toStdString());
-				if (data.contains("access_token") &&
-				    data.contains("refresh_token")) {
-					access_token = data["access_token"];
-					refresh_token = data["refresh_token"];
+			QJsonParseError parseError;
+			QJsonDocument doc = QJsonDocument::fromJson(
+				body.toUtf8(), &parseError);
 
-					SettingsManager::get().SetAccessToken(access_token);
-					SettingsManager::get().SetRefreshToken(refresh_token);
-
-					blog(LOG_INFO, "[Nightbot SR/Auth] Tokens received and saved successfully.");
-					emit authenticationFinished(true);
-					QString httpResponse = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
-					clientSocket->write(httpResponse.toUtf8());
-
-				} else {
-					throw std::runtime_error("Missing tokens in JSON body");
-				}
-			} catch (const std::exception &e) {
-				blog(LOG_WARNING, "[Nightbot SR/Auth] Failed to parse tokens from POST body: %s", e.what());
+			if (doc.isNull()) {
+				blog(LOG_WARNING,
+				     "[Nightbot SR/Auth] Failed to parse tokens from POST body: %s",
+				     parseError.errorString().toUtf8().constData());
 				emit authenticationFinished(false);
 				QString httpResponse = "HTTP/1.1 400 Bad Request\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
 				clientSocket->write(httpResponse.toUtf8());
+			} else {
+				QJsonObject data = doc.object();
+				if (data.contains("access_token") && data["access_token"].isString() &&
+				    data.contains("refresh_token") && data["refresh_token"].isString()) {
+					access_token = data["access_token"].toString().toStdString();
+					refresh_token = data["refresh_token"].toString().toStdString();
+
+					SettingsManager::get().SetAccessToken(access_token);
+					SettingsManager::get().SetRefreshToken(refresh_token);
+					SettingsManager::get().Save();
+
+					blog(LOG_INFO, "[Nightbot SR/Auth] Tokens received and saved successfully.");
+					emit authenticationFinished(true);
+
+					QString httpResponse = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
+					clientSocket->write(httpResponse.toUtf8());
+				} else {
+					blog(LOG_WARNING, "[Nightbot SR/Auth] Missing or invalid tokens in JSON body.");
+					emit authenticationFinished(false);
+					QString httpResponse = "HTTP/1.1 400 Bad Request\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
+					clientSocket->write(httpResponse.toUtf8());
+				}
 			}
 		}
 		// Lida com a requisição GET de erro vinda do backend

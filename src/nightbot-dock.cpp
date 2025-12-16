@@ -15,7 +15,7 @@
 
 #include "nightbot-dock.h"
 
-NightbotDock::NightbotDock(QWidget *parent) : QWidget(parent)
+NightbotDock::NightbotDock() : QWidget(nullptr)
 {
 	// Layout principal vertical
 	QVBoxLayout *mainLayout = new QVBoxLayout();
