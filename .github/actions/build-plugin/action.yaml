@@ -50,6 +50,15 @@ runs:
 
         .github/scripts/build-macos ${build_args}
 
+    - name: Install Curl Development Libraries 🛠️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libcurl4-openssl-dev \
+          zsh
+
     - name: Install Dependencies 🛍️
       if: runner.os == 'Linux'
       shell: bash
