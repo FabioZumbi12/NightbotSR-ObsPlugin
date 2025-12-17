@@ -8,7 +8,7 @@
 #  For buils on github, push tags:
 #  - git tag v1.0.0
 #  - git push origin --tags
-cmake_minimum_required(VERSION 3.28...3.30)
+cmake_minimum_required(VERSION 3.28...4.12)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
@@ -30,19 +30,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
 find_package(CURL REQUIRED)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CURL::libcurl)
 
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    SIMDE_NO_NATIVE
-    SIMDE_DISABLE_NATIVE_ALIASES
-    SIMDE_NO_UNDEF
-    SIMDE_X86_MMX_NATIVE=0
-    SIMDE_X86_SSE_NATIVE=0
-    SIMDE_X86_SSE2_NATIVE=0
-    SIMDE_X86_SSE3_NATIVE=0
-    SIMDE_X86_SSSE3_NATIVE=0
-    SIMDE_X86_SSE4_1_NATIVE=0
-    SIMDE_X86_SSE4_2_NATIVE=0
-)
-
 if(ENABLE_FRONTEND_API)
   find_package(obs-frontend-api REQUIRED)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
@@ -63,9 +50,7 @@ endif()
 
 # https://files.jrsoftware.org/is/6/innosetup-6.6.0.exe
 # Encontra o compilador do Inno Setup (opcional)
-set(SETUP_ROOT "${CMAKE_SOURCE_DIR}/setup")
 set(INNO_SETUP_COMPILER "C:/Program Files (x86)/Inno Setup 6/ISCC.exe")
-
 if(ENABLE_INNO_SETUP AND EXISTS "${INNO_SETUP_COMPILER}")
         add_custom_command(TARGET ${_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Executando Inno Setup como $<CONFIG>..."
