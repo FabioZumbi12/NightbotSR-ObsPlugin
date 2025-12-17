@@ -13,6 +13,8 @@ namespace Setting {
 	inline const char *AccessToken = "access_token";
 	inline const char *RefreshToken = "refresh_token";
 	inline const char *UserName = "user_name";
+	inline const char *AutoRefreshEnabled = "auto_refresh_enabled";
+	inline const char *AutoRefreshInterval = "auto_refresh_interval";
 } // namespace Setting
 
 class SettingsManager {
@@ -28,6 +30,10 @@ public:
 	std::string GetRefreshToken();
 	void SetUserName(const std::string &name);
 	std::string GetNightUserName();
+	void SetAutoRefreshEnabled(bool enabled);
+	bool GetAutoRefreshEnabled();
+	void SetAutoRefreshInterval(int interval);
+	int GetAutoRefreshInterval();
 
 	// Impede a cópia para garantir o padrão Singleton
 	SettingsManager(SettingsManager const &) = delete;

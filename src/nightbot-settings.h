@@ -5,6 +5,8 @@
 
 class QLabel;
 class QPushButton;
+class QCheckBox;
+class QSpinBox;
 
 class NightbotSettingsDialog : public QDialog {
 	Q_OBJECT
@@ -16,7 +18,9 @@ private slots:
 	void OnConnectClicked();
 	void OnDisconnectClicked();
 	void onAuthTimerUpdate(int remainingSeconds);
-
+	void onUserInfoFetched(const QString &userName);
+	void onAutoRefreshToggled(bool checked);
+	void onRefreshIntervalChanged(int value);
 
 private:
 	void UpdateUI(bool just_authenticated = false);
@@ -24,6 +28,8 @@ private:
 	QLabel *statusLabel;
 	QPushButton *connectButton;
 	QPushButton *disconnectButton;
+	QCheckBox *autoRefreshCheckBox;
+	QSpinBox *refreshIntervalSpinBox;
 };
 
 #endif // NIGHTBOT_SETTINGS_H

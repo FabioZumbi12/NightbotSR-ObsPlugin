@@ -33,6 +33,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
+NightbotDock *g_dock_widget = nullptr;
+
 static void show_settings_dialog(void *private_data)
 {
     Q_UNUSED(private_data);
@@ -47,12 +49,17 @@ bool obs_module_load(void)
 
 	SettingsManager::get().Load();
 
-	NightbotDock *dock_widget = new NightbotDock();
-    obs_frontend_add_dock_by_id("nightbot_sr", obs_module_text("Nightbot.DockTitle"), dock_widget);
+	g_dock_widget = new NightbotDock();
+    obs_frontend_add_dock_by_id("nightbot_sr", obs_module_text("Nightbot.DockTitle"), g_dock_widget);
 
 	// Cria e adiciona a ação no menu "Ferramentas" para abrir as configurações
 	obs_frontend_add_tools_menu_item(
 		obs_module_text("Nightbot.Settings"), show_settings_dialog, nullptr);
+
+	// Se já estiver autenticado, carrega a fila de músicas ao iniciar
+	if (NightbotAuth::get().IsAuthenticated()) {
+		NightbotAPI::get().FetchSongQueue();
+	}
 
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
 	return true;

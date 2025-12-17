@@ -29,6 +29,8 @@ void SettingsManager::Load()
         obs_data_set_string(settings, Setting::AccessToken, "");
         obs_data_set_string(settings, Setting::RefreshToken, "");
         obs_data_set_string(settings, Setting::UserName, "");
+		obs_data_set_bool(settings, Setting::AutoRefreshEnabled, true);
+		obs_data_set_int(settings, Setting::AutoRefreshInterval, 5);
 	}
 }
 
@@ -62,6 +64,7 @@ void SettingsManager::Save()
 void SettingsManager::SetAccessToken(const std::string &token)
 {
 	obs_data_set_string(settings, Setting::AccessToken, token.c_str());
+	Save();
 }
 
 std::string SettingsManager::GetAccessToken()
@@ -76,6 +79,7 @@ std::string SettingsManager::GetAccessToken()
 void SettingsManager::SetRefreshToken(const std::string &token)
 {
 	obs_data_set_string(settings, Setting::RefreshToken, token.c_str());
+	Save();
 }
 
 std::string SettingsManager::GetRefreshToken()
@@ -90,6 +94,7 @@ std::string SettingsManager::GetRefreshToken()
 void SettingsManager::SetUserName(const std::string &name)
 {
 	obs_data_set_string(settings, Setting::UserName, name.c_str());
+	Save();
 }
 
 std::string SettingsManager::GetNightUserName()
@@ -99,4 +104,26 @@ std::string SettingsManager::GetNightUserName()
 
 	const char *value = obs_data_get_string(settings, Setting::UserName);
 	return (value) ? value : "";
+}
+
+bool SettingsManager::GetAutoRefreshEnabled()
+{
+	return obs_data_get_bool(settings, Setting::AutoRefreshEnabled);
+}
+
+void SettingsManager::SetAutoRefreshInterval(int interval)
+{
+	obs_data_set_int(settings, Setting::AutoRefreshInterval, interval);
+	Save();
+}
+
+int SettingsManager::GetAutoRefreshInterval()
+{
+	return obs_data_get_int(settings, Setting::AutoRefreshInterval);
+}
+
+void SettingsManager::SetAutoRefreshEnabled(bool enabled)
+{
+	obs_data_set_bool(settings, Setting::AutoRefreshEnabled, enabled);
+	Save();
 }

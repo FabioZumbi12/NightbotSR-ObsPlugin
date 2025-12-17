@@ -1,15 +1,44 @@
 #ifndef NIGHTBOT_API_H
 #define NIGHTBOT_API_H
 
+#include <QObject>
 #include <string>
+#include <QList>
+#include <QString>
 
-class NightbotAPI {
+// Estrutura para armazenar informações de uma música
+struct SongItem {
+	QString id;
+	QString title;
+	QString user;
+	int position;
+	int duration; // Duração em segundos
+};
+
+class NightbotAPI : public QObject {
+	Q_OBJECT
+
 public:
 	static NightbotAPI &get();
 
-	// Busca as informações do usuário autenticado.
-	// Retorna o nome de exibição do usuário em caso de sucesso, ou uma string vazia em caso de falha.
-	std::string FetchUserInfo();
+	// Dispara a busca assíncrona pelas informações do usuário
+	void FetchUserInfo();
+
+	// Dispara a busca assíncrona pela fila de músicas
+	void FetchSongQueue();
+
+	// Funções para controlar o player
+	void ControlPlay();
+	void ControlPause();
+	void ControlSkip();
+	void DeleteSong(const QString &songId);
+	void PromoteSong(const QString &songId);
+	void SetSREnabled(bool enabled);
+
+signals:
+	void userInfoFetched(const QString &userName);
+	void songQueueFetched(const QList<SongItem> &queue);
+	void srStatusFetched(bool isEnabled);
 
 private:
 	NightbotAPI();

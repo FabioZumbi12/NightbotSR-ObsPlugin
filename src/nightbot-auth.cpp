@@ -73,7 +73,8 @@ void NightbotAuth::Authenticate()
 
 	const char *redirect_uri = BACKEND_BASE_URL;
 
-	const char *scopes = "song_requests_queue";
+	// Escopos para acesso à fila de pedidos e à playlist
+	const char *scopes = "song_requests_queue song_requests";
 
 	QUrl url("https://nightbot.tv/oauth2/authorize");
 	QUrlQuery query;
@@ -239,6 +240,20 @@ void NightbotAuth::onNewConnection()
 		}
 		QString method = requestParts[0];
 		QString path = requestParts[1];
+
+		// Lida com a requisição de preflight (CORS) do navegador
+		if (method == "OPTIONS") {
+			QString httpResponse =
+				"HTTP/1.1 204 No Content\r\n"
+				"Access-Control-Allow-Origin: *\r\n"
+				"Access-Control-Allow-Methods: POST, OPTIONS\r\n"
+				"Access-Control-Allow-Headers: Content-Type\r\n"
+				"\r\n";
+			clientSocket->write(httpResponse.toUtf8());
+			clientSocket->disconnectFromHost();
+			// Não fecha o servidor aqui, pois a requisição POST ainda virá.
+			return;
+		}
 
 		// Lida com a requisição POST do backend com os tokens
 		if (method == "POST" && path == "/token") {
