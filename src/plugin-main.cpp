@@ -131,15 +131,15 @@ bool obs_module_load(void)
 
 	g_nightbot_resume_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_RESUME_ID, obs_module_text("Nightbot.Hotkey.Resume"), hotkey_resume_song, nullptr);
-	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Resume' registered with ID: %d", g_nightbot_resume_hotkey_id);
+	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Resume' registered with ID: %lu", g_nightbot_resume_hotkey_id);
 
 	g_nightbot_pause_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_PAUSE_ID, obs_module_text("Nightbot.Hotkey.Pause"), hotkey_pause_song, nullptr);
-	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Pause' registered with ID: %d", g_nightbot_pause_hotkey_id);
+	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Pause' registered with ID: %lu", g_nightbot_pause_hotkey_id);
 
 	g_nightbot_skip_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_SKIP_ID, obs_module_text("Nightbot.Hotkey.Skip"), hotkey_skip_song, nullptr);
-	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Skip' registered with ID: %d", g_nightbot_skip_hotkey_id);
+	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Skip' registered with ID: %lu", g_nightbot_skip_hotkey_id);
 
 	obs_frontend_add_save_callback(save_hotkeys, nullptr);
 
