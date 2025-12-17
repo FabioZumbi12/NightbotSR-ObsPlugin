@@ -14,6 +14,8 @@ namespace Setting {
 	inline const char *UserName = "user_name";
 	inline const char *AutoRefreshEnabled = "auto_refresh_enabled";
 	inline const char *AutoRefreshInterval = "auto_refresh_interval";
+	inline const char *NowPlayingSource = "now_playing_source";
+	inline const char *NowPlayingFormat = "now_playing_format";
 } // namespace Setting
 
 class SettingsManager {
@@ -33,6 +35,10 @@ public:
 	bool GetAutoRefreshEnabled();
 	void SetAutoRefreshInterval(int interval);
 	int GetAutoRefreshInterval();
+	void SetNowPlayingSource(const std::string &sourceName);
+	std::string GetNowPlayingSource();
+	void SetNowPlayingFormat(const std::string &format);
+	std::string GetNowPlayingFormat();
 
 	void SetHotkeyData(const char *key, obs_data_array_t *hotkeyArray);
 	obs_data_array_t *GetHotkeyData(const char *key) const;

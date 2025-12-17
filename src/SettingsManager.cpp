@@ -30,6 +30,8 @@ void SettingsManager::Load()
         obs_data_set_string(settings, Setting::UserName, "");
 		obs_data_set_bool(settings, Setting::AutoRefreshEnabled, true);
 		obs_data_set_int(settings, Setting::AutoRefreshInterval, 5);
+		obs_data_set_string(settings, Setting::NowPlayingSource, "");
+		obs_data_set_string(settings, Setting::NowPlayingFormat, "Now Playing: {music} - {artist}");
 	}
 }
 
@@ -125,6 +127,32 @@ void SettingsManager::SetAutoRefreshEnabled(bool enabled)
 {
 	obs_data_set_bool(settings, Setting::AutoRefreshEnabled, enabled);
 	Save();
+}
+
+void SettingsManager::SetNowPlayingSource(const std::string &sourceName)
+{
+	obs_data_set_string(settings, Setting::NowPlayingSource, sourceName.c_str());
+	Save();
+}
+
+std::string SettingsManager::GetNowPlayingSource()
+{
+	const char *value =
+		obs_data_get_string(settings, Setting::NowPlayingSource);
+	return (value) ? value : "";
+}
+
+void SettingsManager::SetNowPlayingFormat(const std::string &format)
+{
+	obs_data_set_string(settings, Setting::NowPlayingFormat, format.c_str());
+	Save();
+}
+
+std::string SettingsManager::GetNowPlayingFormat()
+{
+	const char *value =
+		obs_data_get_string(settings, Setting::NowPlayingFormat);
+	return (value && *value) ? value : "Now Playing: {music} - {artist}";
 }
 
 obs_data_array_t *SettingsManager::GetHotkeyData(const char *key) const

@@ -134,6 +134,37 @@ void NightbotDock::UpdateSongQueue(const QList<SongItem> &queue)
 	songQueueTable->clearContents();
 	songQueueTable->setRowCount(queue.size());
 
+	std::string sourceName = SettingsManager::get().GetNowPlayingSource();
+	obs_source_t *textSource = nullptr;
+	if (!sourceName.empty()) {
+		textSource = obs_get_source_by_name(sourceName.c_str());
+	}
+
+	if (textSource) {
+		obs_data_t *settings = obs_data_create();
+		if (queue.isEmpty() || queue.at(0).position != 0) {
+			obs_data_set_string(settings, "text", "");
+		} else {
+			const SongItem &currentSong = queue.at(0);
+			int minutes = currentSong.duration / 60;
+			int seconds = currentSong.duration % 60;
+			QString durationStr = QStringLiteral("%1:%2").arg(minutes).arg(seconds, 2, 10, QLatin1Char('0'));
+
+			QString format = QString::fromStdString(SettingsManager::get().GetNowPlayingFormat());
+			format.replace("{music}", currentSong.title);
+			format.replace("{artist}", currentSong.artist);
+			format.replace("{user}", currentSong.user);
+			format.replace("{time}", durationStr);
+
+			obs_data_set_string(settings, "text", format.toUtf8().constData());
+		}
+		obs_source_update(textSource, settings);
+		obs_data_release(settings);
+		obs_source_release(textSource);
+	} else if (!sourceName.empty()) {
+		blog(LOG_WARNING, "[Nightbot SR/Dock] Now playing source '%s' not found.", sourceName.c_str());
+	}
+
 	for (int i = 0; i < queue.size(); ++i) {
 		const SongItem &item = queue.at(i);
 

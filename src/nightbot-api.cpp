@@ -163,6 +163,7 @@ void NightbotAPI::FetchSongQueue()
 					item.position = 0;
 					QJsonObject trackObj = songObj["track"].toObject();
 					item.title = trackObj["title"].toString();
+					item.artist = trackObj["artist"].toString();
 					item.duration = trackObj["duration"].toInt();
 					if (songObj.contains("user") && songObj["user"].isObject()) {
 						item.user = songObj["user"].toObject()["displayName"].toString();
@@ -180,6 +181,7 @@ void NightbotAPI::FetchSongQueue()
 					item.position = songObj["_position"].toInt();
 					QJsonObject trackObj = songObj["track"].toObject();
 					item.title = trackObj["title"].toString();
+					item.artist = trackObj["artist"].toString();
 					item.duration = trackObj["duration"].toInt();
 					item.user = songObj["user"].toObject()["displayName"].toString();
 					song_queue.append(item);

@@ -9,6 +9,7 @@
 struct SongItem {
 	QString id;
 	QString title;
+	QString artist;
 	QString user;
 	int position;
 	int duration;

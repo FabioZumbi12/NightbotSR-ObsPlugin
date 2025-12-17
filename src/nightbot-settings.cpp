@@ -1,5 +1,6 @@
 #include <obs-frontend-api.h>
 #include <obs-module.h>
+#include <obs.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -7,6 +8,10 @@
 #include <QLabel>
 #include <QCheckBox>
 #include <QSpinBox>
+#include <QComboBox>
+#include <QStyle>
+#include <QGroupBox>
+#include <QLineEdit>
 
 #include "nightbot-settings.h"
 #include "nightbot-api.h"
@@ -26,6 +31,11 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	setLayout(mainLayout);
 
+	// --- Seção de Autenticação ---
+	QGroupBox *authGroup = new QGroupBox(obs_module_text("Nightbot.Settings.Authentication"));
+	QVBoxLayout *authLayout = new QVBoxLayout();
+	authGroup->setLayout(authLayout);
+
 	QLabel *instructions = new QLabel(
 		obs_module_text("Nightbot.Settings.Instructions"));
 	instructions->setWordWrap(true);
@@ -41,6 +51,15 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	buttonLayout->addWidget(connectButton);
 	buttonLayout->addWidget(disconnectButton);
 
+	authLayout->addWidget(instructions);
+	authLayout->addSpacing(10);
+	authLayout->addWidget(statusLabel);
+	authLayout->addLayout(buttonLayout);
+
+	// --- Seção da Fila de Músicas ---
+	QGroupBox *queueGroup = new QGroupBox(obs_module_text("Nightbot.Settings.Queue"));
+	QVBoxLayout *queueLayout = new QVBoxLayout();
+	queueGroup->setLayout(queueLayout);
 	autoRefreshCheckBox = new QCheckBox(obs_module_text("Nightbot.Settings.AutoRefresh.Enable"));
 	refreshIntervalSpinBox = new QSpinBox();
 	refreshIntervalSpinBox->setMinimum(5);
@@ -52,13 +71,48 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	refreshLayout->addWidget(refreshIntervalSpinBox);
 	refreshLayout->addStretch();
 
-	mainLayout->addWidget(instructions);
-	mainLayout->addSpacing(15);
-	mainLayout->addWidget(statusLabel);
-	mainLayout->addLayout(buttonLayout);
-	mainLayout->addSpacing(15);
-	mainLayout->addLayout(refreshLayout);
+	queueLayout->addLayout(refreshLayout);
 
+	// --- Seção "Tocando Agora" ---
+	QGroupBox *nowPlayingGroup = new QGroupBox(obs_module_text("Nightbot.Settings.NowPlaying"));
+	QVBoxLayout *nowPlayingLayout = new QVBoxLayout();
+	nowPlayingGroup->setLayout(nowPlayingLayout);
+
+	QLabel *nowPlayingSourceLabel = new QLabel(
+		obs_module_text("Nightbot.Settings.NowPlayingSource.Label"));
+
+	nowPlayingSourceComboBox = new QComboBox();
+
+	QHBoxLayout *formatLabelLayout = new QHBoxLayout();
+	formatLabelLayout->setContentsMargins(0, 0, 0, 0);
+	QLabel *nowPlayingFormatLabel = new QLabel(obs_module_text("Nightbot.Settings.NowPlayingFormat"));
+	formatLabelLayout->addWidget(nowPlayingFormatLabel);
+
+	QLabel *helpIconLabel = new QLabel();
+	QIcon helpIcon = style()->standardIcon(QStyle::SP_MessageBoxInformation);
+	helpIconLabel->setPixmap(helpIcon.pixmap(16, 16));
+	helpIconLabel->setToolTip(obs_module_text("Nightbot.Settings.NowPlayingFormat.Tooltip"));
+	formatLabelLayout->addWidget(helpIconLabel);
+	formatLabelLayout->addStretch();
+
+	nowPlayingFormatLineEdit = new QLineEdit();
+	nowPlayingFormatLineEdit->setPlaceholderText("{music}, {artist}, {user}, {time}");
+
+	nowPlayingLayout->addWidget(nowPlayingSourceLabel);
+	nowPlayingLayout->addWidget(nowPlayingSourceComboBox);
+	nowPlayingLayout->addLayout(formatLabelLayout);
+	nowPlayingLayout->addWidget(nowPlayingFormatLineEdit);
+
+	mainLayout->addWidget(authGroup);
+	mainLayout->addWidget(queueGroup);
+	mainLayout->addWidget(nowPlayingGroup);
+
+	PopulateTextSources();
+
+	connect(nowPlayingSourceComboBox, &QComboBox::currentTextChanged, this,
+		&NightbotSettingsDialog::onNowPlayingSourceChanged);
+	connect(nowPlayingFormatLineEdit, &QLineEdit::textChanged, this,
+		&NightbotSettingsDialog::onNowPlayingFormatChanged);
 	connect(autoRefreshCheckBox, &QCheckBox::toggled, this, &NightbotSettingsDialog::onAutoRefreshToggled);
 	connect(refreshIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &NightbotSettingsDialog::onRefreshIntervalChanged);
 
@@ -127,6 +181,45 @@ void NightbotSettingsDialog::onRefreshIntervalChanged(int value)
 		g_dock_widget->UpdateRefreshTimer();
 }
 
+void NightbotSettingsDialog::PopulateTextSources()
+{
+	nowPlayingSourceComboBox->blockSignals(true);
+	nowPlayingSourceComboBox->clear();
+	nowPlayingSourceComboBox->addItem("", ""); // Add an empty option
+
+	obs_enum_sources([](void *data, obs_source_t *source) {
+		QComboBox *combo = static_cast<QComboBox *>(data);
+		const char *unversioned_id = obs_source_get_unversioned_id(source);
+		if (strcmp(unversioned_id, "text_gdiplus") == 0 ||
+		    strcmp(unversioned_id, "text_ft2_source") == 0 ||
+		    strcmp(unversioned_id, "text_source") == 0) {
+			const char *name = obs_source_get_name(source);
+			combo->addItem(name, name);
+		}
+		return true;
+	}, nowPlayingSourceComboBox);
+
+	std::string currentSource = SettingsManager::get().GetNowPlayingSource();
+	int index = nowPlayingSourceComboBox->findData(currentSource.c_str());
+	if (index != -1) {
+		nowPlayingSourceComboBox->setCurrentIndex(index);
+	}
+
+	nowPlayingSourceComboBox->blockSignals(false);
+}
+
+void NightbotSettingsDialog::onNowPlayingSourceChanged(const QString &sourceName)
+{
+	SettingsManager::get().SetNowPlayingSource(sourceName.toStdString());
+	SettingsManager::get().Save();
+}
+
+void NightbotSettingsDialog::onNowPlayingFormatChanged(const QString &format)
+{
+	SettingsManager::get().SetNowPlayingFormat(format.toStdString());
+	SettingsManager::get().Save();
+}
+
 void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 {
 	bool authenticated = auth.IsAuthenticated();
@@ -165,4 +258,8 @@ void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 	autoRefreshCheckBox->setChecked(autoRefreshEnabled);
 	refreshIntervalSpinBox->setEnabled(autoRefreshEnabled);
 	refreshIntervalSpinBox->setValue(SettingsManager::get().GetAutoRefreshInterval());
+
+	PopulateTextSources();
+	nowPlayingFormatLineEdit->setText(
+		QString::fromStdString(SettingsManager::get().GetNowPlayingFormat()));
 }
