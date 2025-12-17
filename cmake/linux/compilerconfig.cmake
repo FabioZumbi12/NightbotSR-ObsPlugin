@@ -33,7 +33,6 @@ set(_obs_gcc_c_options
     -Wno-unused-function
     -Wno-unused-label
     -Wparentheses
-    -Wshadow
     -Wuninitialized
     -Wunreachable-code
     -Wunused-parameter
@@ -83,4 +82,4 @@ else()
       CACHE STRING "Enable Clang time-trace (required Clang and Ninja)" FORCE)
 endif()
 
-add_compile_definitions($<$<CONFIG:DEBUG>:DEBUG> $<$<CONFIG:DEBUG>:_DEBUG> SIMDE_ENABLE_OPENMP)
+add_compile_definitions($<$<CONFIG:DEBUG>:DEBUG> $<$<CONFIG:DEBUG>:_DEBUG>)
