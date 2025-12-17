@@ -174,7 +174,7 @@ void NightbotAPI::FetchSongQueue()
 				}
 
 				const auto queueArray = rootObj["queue"].toArray();
-				for (const QJsonValue &value : queueArray) {
+				for (const QJsonValue value : queueArray) {
 					QJsonObject songObj = value.toObject();
 					SongItem item;
 					item.id = songObj["_id"].toString();
