@@ -1,8 +1,8 @@
-#include "nightbot-api.h"
-#include "nightbot-auth.h"
-
 #include <obs-module.h>
 #include <curl/curl.h>
+
+#include "nightbot-api.h"
+#include "nightbot-auth.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
