@@ -8,7 +8,6 @@
 #include <QFileInfo>
 #include <QDir>
 
-// Nomes estáticos para as propriedades de configuração
 namespace Setting {
 	inline const char *AccessToken = "access_token";
 	inline const char *RefreshToken = "refresh_token";
@@ -38,7 +37,6 @@ public:
 	void SetHotkeyData(const char *key, obs_data_array_t *hotkeyArray);
 	obs_data_array_t *GetHotkeyData(const char *key) const;
 
-	// Impede a cópia para garantir o padrão Singleton
 	SettingsManager(SettingsManager const &) = delete;
 	void operator=(SettingsManager const &) = delete;
 

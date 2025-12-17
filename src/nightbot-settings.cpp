@@ -14,9 +14,8 @@
 #include "SettingsManager.h"
 #include "nightbot-dock.h"
 
-extern NightbotDock *g_dock_widget; // Acessa a instância global da dock
+extern NightbotDock *g_dock_widget;
 
-// Use the singleton accessor
 #define auth NightbotAuth::get()
 
 NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
@@ -27,15 +26,12 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	QVBoxLayout *mainLayout = new QVBoxLayout();
 	setLayout(mainLayout);
 
-	// Instruções
 	QLabel *instructions = new QLabel(
 		obs_module_text("Nightbot.Settings.Instructions"));
 	instructions->setWordWrap(true);
 
-	// Status da Conexão
 	statusLabel = new QLabel();
 
-	// Botões
 	connectButton =
 		new QPushButton(obs_module_text("Nightbot.Settings.Connect"));
 	disconnectButton = new QPushButton(
@@ -45,11 +41,10 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	buttonLayout->addWidget(connectButton);
 	buttonLayout->addWidget(disconnectButton);
 
-	// Opções de atualização automática
 	autoRefreshCheckBox = new QCheckBox(obs_module_text("Nightbot.Settings.AutoRefresh.Enable"));
 	refreshIntervalSpinBox = new QSpinBox();
-	refreshIntervalSpinBox->setMinimum(5); // Mínimo de 5 segundos
-	refreshIntervalSpinBox->setMaximum(300); // Máximo de 5 minutos
+	refreshIntervalSpinBox->setMinimum(5);
+	refreshIntervalSpinBox->setMaximum(300);
 	refreshIntervalSpinBox->setSuffix("s");
 
 	QHBoxLayout *refreshLayout = new QHBoxLayout();
@@ -64,17 +59,14 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	mainLayout->addSpacing(15);
 	mainLayout->addLayout(refreshLayout);
 
-	// Conecta os sinais das novas opções
 	connect(autoRefreshCheckBox, &QCheckBox::toggled, this, &NightbotSettingsDialog::onAutoRefreshToggled);
 	connect(refreshIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &NightbotSettingsDialog::onRefreshIntervalChanged);
 
-	// Conecta os sinais dos botões aos slots
 	connect(connectButton, &QPushButton::clicked, this,
 		&NightbotSettingsDialog::OnConnectClicked);
 	connect(disconnectButton, &QPushButton::clicked, this,
 		&NightbotSettingsDialog::OnDisconnectClicked);
 
-	// Connect to the auth finished signal to update the UI automatically
 	connect(&auth, &NightbotAuth::authenticationFinished, this, [this](bool success){
 		UpdateUI(success); });
 	connect(&auth, &NightbotAuth::authTimerUpdate, this,
@@ -112,12 +104,10 @@ void NightbotSettingsDialog::onUserInfoFetched(const QString &userName)
 	if (!userName.isEmpty()) {
 		SettingsManager::get().SetUserName(userName.toStdString());
 
-		// Atualiza a fila de músicas na dock
 		if (g_dock_widget) {
 			NightbotAPI::get().FetchSongQueue();
 		}
 
-		// Atualiza a UI com o nome do usuário
 		UpdateUI();
 	}
 }
@@ -146,7 +136,6 @@ void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 		blog(LOG_INFO, "[Nightbot SR/Settings] Authenticated user: %s",
 				user_name.c_str());
 
-		// Se acabamos de autenticar ou não temos o nome salvo, buscamos na API
 		if (just_authenticated || user_name.empty()) {
 			NightbotAPI::get().FetchUserInfo();
 		}
@@ -172,7 +161,6 @@ void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 	connectButton->setEnabled(!authenticated);
 	disconnectButton->setEnabled(authenticated);
 
-	// Atualiza os controles de auto-refresh
 	bool autoRefreshEnabled = SettingsManager::get().GetAutoRefreshEnabled();
 	autoRefreshCheckBox->setChecked(autoRefreshEnabled);
 	refreshIntervalSpinBox->setEnabled(autoRefreshEnabled);

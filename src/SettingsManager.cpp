@@ -25,7 +25,6 @@ void SettingsManager::Load()
         blog(LOG_INFO, "[Nightbot SR/Settings] No config found. Creating new one...");
 		settings = obs_data_create();
 
-        // Defaults
         obs_data_set_string(settings, Setting::AccessToken, "");
         obs_data_set_string(settings, Setting::RefreshToken, "");
         obs_data_set_string(settings, Setting::UserName, "");
@@ -43,7 +42,7 @@ void SettingsManager::Save()
 
     const char *config_path_c = obs_module_config_path(SETTINGS_FILE_NAME);
 	if (!config_path_c) {
-		blog(LOG_ERROR, "[Nightbot SR/Settings] Invalid path when saving config.");
+		blog(LOG_ERROR, "[Nightbot SR/Settings] Could not get config path for saving.");
 		return;
 	}
 

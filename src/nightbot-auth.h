@@ -17,19 +17,11 @@ public:
         return instance;
     }
 
-	// Inicia o fluxo de autenticação OAuth2, abrindo o navegador do usuário.
 	void Authenticate();
-
-	// Renova o token de acesso usando o refresh token.
 	bool RefreshToken();
-
-	// Limpa os tokens salvos.
 	void ClearTokens();
-
-	// Verifica se o usuário está autenticado (possui um token).
 	bool IsAuthenticated();
 
-	// Retorna o token de acesso atual para ser usado em chamadas de API.
 	const std::string &GetAccessToken();
 
 signals:

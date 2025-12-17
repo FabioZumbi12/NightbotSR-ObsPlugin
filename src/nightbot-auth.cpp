@@ -38,7 +38,6 @@ NightbotAuth::NightbotAuth(QObject *parent) : QObject(parent)
 		&NightbotAuth::onAuthTimeout);
 
 	countdown_timer = new QTimer(this);
-	// Não é single-shot, vai disparar a cada segundo
 	connect(countdown_timer, &QTimer::timeout, this,
 		&NightbotAuth::onSecondElapsed);
 }
@@ -63,16 +62,14 @@ void NightbotAuth::Authenticate()
 	}
 
 	blog(LOG_INFO, "[Nightbot SR/Auth] Starting local server for 30 seconds...");
-	auth_timeout_timer->start(30000); // 30 segundos de timeout
+	auth_timeout_timer->start(30000);
 
 	auth_countdown = 30;
-	emit authTimerUpdate(auth_countdown); // Emite o valor inicial
-	countdown_timer->start(1000);	      // Inicia o timer de 1 segundo
+	emit authTimerUpdate(auth_countdown);
+	countdown_timer->start(1000);
 
 
 	const char *redirect_uri = BACKEND_BASE_URL;
-
-	// Escopos para acesso à fila de pedidos e à playlist
 	const char *scopes = "song_requests_queue song_requests";
 
 	QUrl url("https://nightbot.tv/oauth2/authorize");
@@ -112,7 +109,6 @@ bool NightbotAuth::RefreshToken()
 		return size * nmemb;
 	};
 
-	// URL do endpoint de refresh no backend
 	std::string refresh_url_str = std::string(BACKEND_BASE_URL) + "/api/refresh-token";
 	const char *refresh_url = refresh_url_str.c_str();
 
@@ -126,7 +122,6 @@ bool NightbotAuth::RefreshToken()
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-	// Adicionar header de content-type para JSON
 	struct curl_slist *headers = NULL;
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -157,7 +152,6 @@ bool NightbotAuth::RefreshToken()
 					data["access_token"].toString().toStdString();
 				SettingsManager::get().SetAccessToken(access_token);
 
-				// Opcional: O servidor pode retornar um novo refresh_token
 				if (data.contains("refresh_token") &&
 				    data["refresh_token"].isString()) {
 					refresh_token = data["refresh_token"]
@@ -240,7 +234,6 @@ void NightbotAuth::onNewConnection()
 		QString method = requestParts[0];
 		QString path = requestParts[1];
 
-		// Lida com a requisição de preflight (CORS) do navegador
 		if (method == "OPTIONS") {
 			QString httpResponse =
 				"HTTP/1.1 204 No Content\r\n"
@@ -250,20 +243,17 @@ void NightbotAuth::onNewConnection()
 				"\r\n";
 			clientSocket->write(httpResponse.toUtf8());
 			clientSocket->disconnectFromHost();
-			// Não fecha o servidor aqui, pois a requisição POST ainda virá.
 			return;
 		}
 
-		// Lida com a requisição POST do backend com os tokens
 		if (method == "POST" && path == "/token") {
 			int bodyIndex = request.indexOf("\r\n\r\n");
 			if (bodyIndex == -1) {
-				// Corpo da requisição não encontrado
 				QString httpResponse = "HTTP/1.1 400 Bad Request\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
 				clientSocket->write(httpResponse.toUtf8());
 				clientSocket->disconnectFromHost();
 				http_server->close();
-				return; // Adicionado para clareza
+				return;
 			}
 			QString body = request.mid(bodyIndex + 4);
 
@@ -302,7 +292,6 @@ void NightbotAuth::onNewConnection()
 				}
 			}
 		} else {
-			// Responde a qualquer outra requisição inesperada
 			blog(LOG_WARNING, "[Nightbot SR/Auth] Received unexpected request: %s %s",
 			     method.toUtf8().constData(), path.toUtf8().constData());
 			QString httpResponse = "HTTP/1.1 404 Not Found\r\nAccess-Control-Allow-Origin: *\r\n\r\n";

@@ -66,7 +66,6 @@ static void save_hotkeys(obs_data_t *save_data, bool saving, void *private_data)
 	SettingsManager::get().Save();
 }
 
-// --- Hotkey callbacks ---
 static void hotkey_pause_song(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
 {
 	Q_UNUSED(data);
@@ -116,7 +115,6 @@ const char *obs_module_get_name(void)
 
 bool obs_module_load(void)
 {
-	// Inicializa o libcurl globalmente para evitar problemas de heap
 	curl_global_init(CURL_GLOBAL_ALL);
 
 	SettingsManager::get().Load();
@@ -124,16 +122,13 @@ bool obs_module_load(void)
 	g_dock_widget = new NightbotDock();
     obs_frontend_add_dock_by_id("nightbot_sr", obs_module_text("Nightbot.DockTitle"), g_dock_widget);
 
-	// Cria e adiciona a ação no menu "Ferramentas" para abrir as configurações
 	obs_frontend_add_tools_menu_item(
 		obs_module_text("Nightbot.Settings"), show_settings_dialog, nullptr);
 
-	// Se já estiver autenticado, carrega a fila de músicas ao iniciar
 	if (NightbotAuth::get().IsAuthenticated()) {
 		NightbotAPI::get().FetchSongQueue();
 	}
 
-	// Register hotkeys
 	g_nightbot_resume_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_RESUME_ID, obs_module_text("Nightbot.Hotkey.Resume"), hotkey_resume_song, nullptr);
 	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Resume' registered with ID: %d", g_nightbot_resume_hotkey_id);
@@ -148,7 +143,6 @@ bool obs_module_load(void)
 
 	obs_frontend_add_save_callback(save_hotkeys, nullptr);
 
-	// Load hotkeys from OBS settings
 	obs_data_array_t *nightbot_resume_hotkey = SettingsManager::get().GetHotkeyData(HOTKEY_RESUME_ID);
 	obs_hotkey_load(g_nightbot_resume_hotkey_id, nightbot_resume_hotkey);
 	obs_data_array_release(nightbot_resume_hotkey);

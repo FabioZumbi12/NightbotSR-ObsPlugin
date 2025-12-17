@@ -6,13 +6,12 @@
 #include <QList>
 #include <QString>
 
-// Estrutura para armazenar informações de uma música
 struct SongItem {
 	QString id;
 	QString title;
 	QString user;
 	int position;
-	int duration; // Duração em segundos
+	int duration;
 };
 
 class NightbotAPI : public QObject {
@@ -21,13 +20,9 @@ class NightbotAPI : public QObject {
 public:
 	static NightbotAPI &get();
 
-	// Dispara a busca assíncrona pelas informações do usuário
 	void FetchUserInfo();
-
-	// Dispara a busca assíncrona pela fila de músicas
 	void FetchSongQueue();
 
-	// Funções para controlar o player
 	void ControlPlay();
 	void ControlPause();
 	void ControlSkip();
