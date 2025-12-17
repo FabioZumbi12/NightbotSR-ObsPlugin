@@ -1,5 +1,6 @@
 #include "SettingsManager.h"
 #include <obs-module.h>
+#include "plugin-support.h"
 
 static const char *SETTINGS_FILE_NAME = "settings.json";
 
@@ -22,7 +23,7 @@ void SettingsManager::Load()
     this->settings = obs_data_create_from_json_file(obs_module_config_path(SETTINGS_FILE_NAME));
 
 	if (!settings) {
-        blog(LOG_INFO, "[Nightbot SR/Settings] No config found. Creating new one...");
+        obs_log_info("[Nightbot SR/Settings] No config found. Creating new one...");
 		settings = obs_data_create();
 
         obs_data_set_string(settings, Setting::AccessToken, "");
@@ -38,13 +39,13 @@ void SettingsManager::Load()
 void SettingsManager::Save()
 {
 	if (!settings){
-        blog(LOG_ERROR, "[Nightbot SR/Settings] Attempt to save null config.");
+        obs_log_error("[Nightbot SR/Settings] Attempt to save null config.");
 		return;
     }
 
     const char *config_path_c = obs_module_config_path(SETTINGS_FILE_NAME);
 	if (!config_path_c) {
-		blog(LOG_ERROR, "[Nightbot SR/Settings] Could not get config path for saving.");
+		obs_log_error("[Nightbot SR/Settings] Could not get config path for saving.");
 		return;
 	}
 
@@ -56,9 +57,9 @@ void SettingsManager::Save()
 		dir.mkpath(".");
 
 	if (obs_data_save_json(settings, config_path_c)) {
-		blog(LOG_INFO, "[Nightbot SR/Settings] Config saved to: %s", config_path_c);
+		obs_log_info("[Nightbot SR/Settings] Config saved to: %s", config_path_c);
 	} else {
-		blog(LOG_WARNING, "[Nightbot SR/Settings] Failed to save config to: %s", config_path_c);
+		obs_log_warning("[Nightbot SR/Settings] Failed to save config to: %s", config_path_c);
 	}
 }
 

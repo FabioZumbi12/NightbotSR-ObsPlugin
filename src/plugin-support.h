@@ -30,7 +30,10 @@ extern "C" {
 extern const char *PLUGIN_NAME;
 extern const char *PLUGIN_VERSION;
 
-void obs_log(int log_level, const char *format, ...);
+void obs_log_info(const char *format, ...);
+void obs_log_warning(const char *format, ...);
+void obs_log_error(const char *format, ...);
+
 extern void blogva(int log_level, const char *format, va_list args);
 const char *get_obs_text(const char *key);
 

@@ -1,5 +1,4 @@
 #include <obs-frontend-api.h>
-#include <obs.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -226,7 +225,7 @@ void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 
 	if (authenticated) {
 		std::string user_name = SettingsManager::get().GetNightUserName();
-		blog(LOG_INFO, "[Nightbot SR/Settings] Authenticated user: %s",
+		obs_log_info("[Nightbot SR/Settings] Authenticated user: %s",
 				user_name.c_str());
 
 		if (just_authenticated || user_name.empty()) {

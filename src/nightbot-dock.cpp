@@ -106,7 +106,7 @@ void NightbotDock::UpdateRefreshTimer()
 	if (NightbotAuth::get().GetAccessToken().empty()) {
 		if (refreshTimer->isActive()) {
 			refreshTimer->stop();
-			blog(LOG_INFO, "[Nightbot SR/Dock] Not authenticated. Auto-refresh timer stopped.");
+			obs_log_info("[Nightbot SR/Dock] Not authenticated. Auto-refresh timer stopped.");
 		}
 		updateSRStatusButton(false);
 		return;
@@ -118,14 +118,14 @@ void NightbotDock::UpdateRefreshTimer()
 		if (interval_s > 0) {
 			int interval_ms = interval_s * 1000;
 			refreshTimer->start(interval_ms);
-			blog(LOG_INFO, "[Nightbot SR/Dock] Auto-refresh timer started with %dms interval.", interval_ms);
+			obs_log_info("[Nightbot SR/Dock] Auto-refresh timer started with %dms interval.", interval_ms);
 		} else {
 			refreshTimer->stop();
-			blog(LOG_WARNING, "[Nightbot SR/Dock] Auto-refresh is enabled but interval is invalid (%d seconds). Timer stopped to prevent spam.", interval_s);
+			obs_log_warning("[Nightbot SR/Dock] Auto-refresh is enabled but interval is invalid (%d seconds). Timer stopped to prevent spam.", interval_s);
 		}
 	} else {
 		refreshTimer->stop();
-		blog(LOG_INFO, "[Nightbot SR/Dock] Auto-refresh timer stopped.");
+		obs_log_info("[Nightbot SR/Dock] Auto-refresh timer stopped.");
 	}
 }
 
@@ -162,7 +162,7 @@ void NightbotDock::UpdateSongQueue(const QList<SongItem> &queue)
 		obs_data_release(settings);
 		obs_source_release(textSource);
 	} else if (!sourceName.empty()) {
-		blog(LOG_WARNING, "[Nightbot SR/Dock] Now playing source '%s' not found.", sourceName.c_str());
+		obs_log_warning("[Nightbot SR/Dock] Now playing source '%s' not found.", sourceName.c_str());
 	}
 
 	for (int i = 0; i < queue.size(); ++i) {

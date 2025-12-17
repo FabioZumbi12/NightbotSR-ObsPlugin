@@ -72,7 +72,7 @@ static void hotkey_pause_song(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey
 	Q_UNUSED(id);
 	Q_UNUSED(hotkey);
 	if (pressed) {
-		blog(LOG_INFO, "Pause hotkey pressed");
+		obs_log_info("Pause hotkey pressed");
 		NightbotAPI::get().ControlPause();
 	}
 }
@@ -83,7 +83,7 @@ static void hotkey_resume_song(void *data, obs_hotkey_id id, obs_hotkey_t *hotke
 	Q_UNUSED(id);
 	Q_UNUSED(hotkey);
 	if (pressed) {
-		blog(LOG_INFO, "Resume hotkey pressed");
+		obs_log_info("Resume hotkey pressed");
 		NightbotAPI::get().ControlPlay();
 	}
 }
@@ -94,7 +94,7 @@ static void hotkey_skip_song(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	Q_UNUSED(id);
 	Q_UNUSED(hotkey);
 	if (pressed) {
-		blog(LOG_INFO, "Skip hotkey pressed");
+		obs_log_info("Skip hotkey pressed");
 		NightbotAPI::get().ControlSkip();
 	}
 }
@@ -132,15 +132,15 @@ bool obs_module_load(void)
 
 	g_nightbot_resume_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_RESUME_ID, obs_module_text("Nightbot.Hotkey.Resume"), hotkey_resume_song, nullptr);
-	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Resume' registered with ID: %lu", g_nightbot_resume_hotkey_id);
+	obs_log_info("[Nightbot SR] Hotkey 'Resume' registered with ID: %lu", g_nightbot_resume_hotkey_id);
 
 	g_nightbot_pause_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_PAUSE_ID, obs_module_text("Nightbot.Hotkey.Pause"), hotkey_pause_song, nullptr);
-	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Pause' registered with ID: %lu", g_nightbot_pause_hotkey_id);
+	obs_log_info("[Nightbot SR] Hotkey 'Pause' registered with ID: %lu", g_nightbot_pause_hotkey_id);
 
 	g_nightbot_skip_hotkey_id = obs_hotkey_register_frontend(
 		HOTKEY_SKIP_ID, obs_module_text("Nightbot.Hotkey.Skip"), hotkey_skip_song, nullptr);
-	blog(LOG_INFO, "[Nightbot SR] Hotkey 'Skip' registered with ID: %lu", g_nightbot_skip_hotkey_id);
+	obs_log_info("[Nightbot SR] Hotkey 'Skip' registered with ID: %lu", g_nightbot_skip_hotkey_id);
 
 	obs_frontend_add_save_callback(save_hotkeys, nullptr);
 
@@ -156,7 +156,7 @@ bool obs_module_load(void)
 	obs_hotkey_load(g_nightbot_skip_hotkey_id, nightbot_skip_hotkey);
 	obs_data_array_release(nightbot_skip_hotkey);
 
-	obs_log(LOG_INFO, "[Nightbot SR] Plugin loaded successfully (version %s)", PLUGIN_VERSION);
+	obs_log_info("[Nightbot SR] Plugin loaded successfully (version %s)", PLUGIN_VERSION);
 	return true;
 }
 
@@ -170,10 +170,34 @@ void obs_module_unload(void)
 
 	curl_global_cleanup();
 
-	obs_log(LOG_INFO, "[Nightbot SR] Plugin unloaded");
+	obs_log_info("[Nightbot SR] Plugin unloaded");
 }
 
 const char *get_obs_text(const char *key)
 {
 	return obs_module_text(key);
+}
+
+void obs_log_info(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	blogva(LOG_INFO, format, args);
+	va_end(args);
+}
+
+void obs_log_warning(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	blogva(LOG_WARNING, format, args);
+	va_end(args);
+}
+
+void obs_log_error(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	blogva(LOG_ERROR, format, args);
+	va_end(args);
 }
