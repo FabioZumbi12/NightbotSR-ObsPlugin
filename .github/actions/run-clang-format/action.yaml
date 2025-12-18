@@ -41,7 +41,9 @@ runs:
 
     - name: Make build scripts executable
       shell: bash
-      run: chmod +x ./build-aux/run-clang-format
+      run: |
+        chmod +x ./build-aux/run-clang-format
+        chmod +x ./build-aux/.run-format.zsh
 
     - name: Run clang-format 🐉
       if: fromJSON(steps.checks.outputs.hasChangedFiles)

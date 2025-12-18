@@ -6,7 +6,7 @@
 #  If the build fail (the folder build_x64 don't exists), run on terminal: cmake --preset windows-x64
 #
 #  For buils on github, push tags:
-#  - git tag v1.0.0
+#  - git tag 1.0.0
 #  - git push origin --tags
 cmake_minimum_required(VERSION 3.28...4.12)
 

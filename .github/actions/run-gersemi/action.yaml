@@ -40,7 +40,9 @@ runs:
 
     - name: Make build scripts executable
       shell: bash
-      run: chmod +x ./build-aux/run-gersemi
+      run: |
+        chmod +x ./build-aux/run-gersemi
+        chmod +x ./build-aux/.run-format.zsh
 
     - name: Run gersemi 🎛️
       if: fromJSON(steps.checks.outputs.hasChangedFiles)
