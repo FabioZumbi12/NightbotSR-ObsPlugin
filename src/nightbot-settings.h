@@ -25,10 +25,15 @@ private slots:
 	void onRefreshIntervalChanged(int value);
 	void onNowPlayingSourceChanged(const QString &sourceName);
 	void onNowPlayingFormatChanged(const QString &format);
+	void onSaveToFileToggled(bool checked);
+	void onBrowseFileClicked();
+	void onClearPathClicked();
+	void onFilePathChanged();
 
 private:
 	void UpdateUI(bool just_authenticated = false);
 	void PopulateTextSources();
+	void CheckFilePath();
 
 	QLabel *statusLabel;
 	QPushButton *connectButton;
@@ -37,6 +42,11 @@ private:
 	QSpinBox *refreshIntervalSpinBox;
 	QComboBox *nowPlayingSourceComboBox;
 	QLineEdit *nowPlayingFormatLineEdit;
+	QCheckBox *saveToFileCheckBox;
+	QLineEdit *filePathLineEdit;
+	QPushButton *browseButton;
+	QPushButton *clearPathButton;
+	QLabel *fileErrorLabel;
 };
 
 #endif // NIGHTBOT_SETTINGS_H

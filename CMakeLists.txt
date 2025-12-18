@@ -69,6 +69,7 @@ target_sources(
           src/nightbot-api.cpp
           src/nightbot-dock.cpp
           src/nightbot-settings.cpp
+          src/song-request-dialog.cpp
           src/SettingsManager.cpp
 )
 

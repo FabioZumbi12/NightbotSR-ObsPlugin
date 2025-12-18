@@ -11,12 +11,14 @@
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QFile>
 
 #include "nightbot-dock.h"
 #include "nightbot-api.h"
 #include "SettingsManager.h"
 #include "nightbot-auth.h"
 #include "plugin-support.h"
+#include "song-request-dialog.h"
 
 NightbotDock::NightbotDock() : QWidget(nullptr)
 {
@@ -42,6 +44,11 @@ NightbotDock::NightbotDock() : QWidget(nullptr)
 	controlsLayout->addWidget(pauseButton);
 	controlsLayout->addWidget(skipButton);
 
+	QPushButton *addButton = createControlButton(
+		style()->standardIcon(QStyle::SP_FileDialogNewFolder),
+		get_obs_text("Nightbot.SongRequest.Add"));
+	controlsLayout->addWidget(addButton);
+
 	controlsLayout->addStretch();
 
 	srToggleButton = new QToolButton();
@@ -51,7 +58,6 @@ NightbotDock::NightbotDock() : QWidget(nullptr)
 	updateSRStatusButton(false);
 	srToggleButton->setEnabled(NightbotAuth::get().IsAuthenticated());
 	controlsLayout->addWidget(srToggleButton);
-
 
 	QPushButton *refreshButton = createControlButton(
 		style()->standardIcon(QStyle::SP_BrowserReload), get_obs_text("Nightbot.Dock.Refresh"));
@@ -88,6 +94,7 @@ NightbotDock::NightbotDock() : QWidget(nullptr)
 	connect(pauseButton, &QPushButton::clicked, this, &NightbotDock::onPauseClicked);
 	connect(skipButton, &QPushButton::clicked, this, &NightbotDock::onSkipClicked);
 
+	connect(addButton, &QPushButton::clicked, this, &NightbotDock::onAddSongClicked);
 	connect(srToggleButton, &QToolButton::clicked, this, &NightbotDock::onToggleSRClicked);
 
 	connect(&NightbotAPI::get(), &NightbotAPI::songQueueFetched, this,
@@ -134,35 +141,53 @@ void NightbotDock::UpdateSongQueue(const QList<SongItem> &queue)
 	songQueueTable->clearContents();
 	songQueueTable->setRowCount(static_cast<int>(queue.size()));
 
-	std::string sourceName = SettingsManager::get().GetNowPlayingSource();
-	obs_source_t *textSource = nullptr;
-	if (!sourceName.empty()) {
-		textSource = obs_get_source_by_name(sourceName.c_str());
+	// 1. Prepara o texto "Tocando Agora" independentemente de qualquer saída.
+	QString nowPlayingText = "";
+	if (!queue.isEmpty() && queue.at(0).position == 0) {
+		const SongItem &currentSong = queue.at(0);
+		int minutes = currentSong.duration / 60;
+		int seconds = currentSong.duration % 60;
+		QString durationStr = QStringLiteral("%1:%2").arg(minutes).arg(seconds, 2, 10, QLatin1Char('0'));
+
+		QString format = QString::fromStdString(SettingsManager::get().GetNowPlayingFormat());
+		format.replace("{music}", currentSong.title);
+		format.replace("{artist}", currentSong.artist);
+		format.replace("{user}", currentSong.user);
+		format.replace("{time}", durationStr);
+
+		nowPlayingText = format;
 	}
 
-	if (textSource) {
-		obs_data_t *settings = obs_data_create();
-		if (queue.isEmpty() || queue.at(0).position != 0) {
-			obs_data_set_string(settings, "text", "");
+	// 2. Atualiza a fonte de texto, se uma estiver selecionada.
+	std::string sourceName = SettingsManager::get().GetNowPlayingSource();
+	if (!sourceName.empty() && !nowPlayingText.isEmpty()) {
+		obs_source_t *textSource = obs_get_source_by_name(sourceName.c_str());
+		if (textSource) {
+			obs_data_t *settings = obs_data_create();
+			obs_data_set_string(settings, "text", nowPlayingText.toUtf8().constData());
+			obs_source_update(textSource, settings);
+			obs_data_release(settings);
+			obs_source_release(textSource);
 		} else {
-			const SongItem &currentSong = queue.at(0);
-			int minutes = currentSong.duration / 60;
-			int seconds = currentSong.duration % 60;
-			QString durationStr = QStringLiteral("%1:%2").arg(minutes).arg(seconds, 2, 10, QLatin1Char('0'));
-
-			QString format = QString::fromStdString(SettingsManager::get().GetNowPlayingFormat());
-			format.replace("{music}", currentSong.title);
-			format.replace("{artist}", currentSong.artist);
-			format.replace("{user}", currentSong.user);
-			format.replace("{time}", durationStr);
-
-			obs_data_set_string(settings, "text", format.toUtf8().constData());
+			obs_log_warning("[Nightbot SR/Dock] Now playing source '%s' not found.", sourceName.c_str());
 		}
-		obs_source_update(textSource, settings);
-		obs_data_release(settings);
-		obs_source_release(textSource);
-	} else if (!sourceName.empty()) {
-		obs_log_warning("[Nightbot SR/Dock] Now playing source '%s' not found.", sourceName.c_str());
+	}
+
+	// 3. Salva para o arquivo, se a opção estiver habilitada.
+	if (SettingsManager::get().GetNowPlayingToFileEnabled() && !nowPlayingText.isEmpty()) {
+		std::string filePathStr = SettingsManager::get().GetNowPlayingToFilePath();
+		if (!filePathStr.empty()) {
+			QFile file(QString::fromStdString(filePathStr));
+			if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+				QTextStream out(&file);
+				out << nowPlayingText;
+				file.close();
+			} else {
+				obs_log_warning("[Nightbot SR/Dock] Failed to write to file '%s'. Error: %s",
+						filePathStr.c_str(),
+						file.errorString().toUtf8().constData());
+			}
+		}
 	}
 
 	for (qsizetype i = 0; i < queue.size(); ++i) {
@@ -252,6 +277,12 @@ void NightbotDock::onSkipClicked()
 
 	NightbotAPI::get().FetchSongQueue(get_obs_text(
 		"Nightbot.Queue.PlaylistUser"));
+}
+
+void NightbotDock::onAddSongClicked()
+{
+	SongRequestDialog dialog(this);
+	dialog.exec();
 }
 
 void NightbotDock::onToggleSRClicked()

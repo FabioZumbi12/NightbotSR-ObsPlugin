@@ -28,12 +28,14 @@ public:
 	void ControlPause();
 	void ControlSkip();
 	void DeleteSong(const QString &songId);
+	void AddSong(const QString &query);
 	void PromoteSong(const QString &songId);
 	void SetSREnabled(bool enabled);
 
 signals:
 	void userInfoFetched(const QString &userName);
 	void songQueueFetched(const QList<SongItem> &queue);
+	void songAdded(bool success, const QString &message);
 	void srStatusFetched(bool isEnabled);
 
 private:

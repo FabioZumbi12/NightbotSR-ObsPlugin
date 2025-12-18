@@ -16,6 +16,8 @@ namespace Setting {
 	inline const char *AutoRefreshInterval = "auto_refresh_interval";
 	inline const char *NowPlayingSource = "now_playing_source";
 	inline const char *NowPlayingFormat = "now_playing_format";
+	inline const char *NowPlayingToFileEnabled = "now_playing_to_file_enabled";
+	inline const char *NowPlayingToFilePath = "now_playing_to_file_path";
 } // namespace Setting
 
 class SettingsManager {
@@ -39,6 +41,10 @@ public:
 	std::string GetNowPlayingSource();
 	void SetNowPlayingFormat(const std::string &format);
 	std::string GetNowPlayingFormat();
+	void SetNowPlayingToFileEnabled(bool enabled);
+	bool GetNowPlayingToFileEnabled();
+	void SetNowPlayingToFilePath(const std::string &path);
+	std::string GetNowPlayingToFilePath();
 
 	void SetHotkeyData(const char *key, obs_data_array_t *hotkeyArray);
 	obs_data_array_t *GetHotkeyData(const char *key) const;

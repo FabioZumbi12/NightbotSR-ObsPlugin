@@ -24,6 +24,7 @@ private slots:
 	void onSkipClicked();
 	void onDeleteSongClicked(const QString &songId);
 	void onPromoteSongClicked(const QString &songId);
+	void onAddSongClicked();
 	void onToggleSRClicked();
 	void updateSRStatusButton(bool isEnabled);
 

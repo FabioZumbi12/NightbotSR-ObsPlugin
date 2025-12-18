@@ -33,6 +33,8 @@ void SettingsManager::Load()
 		obs_data_set_int(settings, Setting::AutoRefreshInterval, 5);
 		obs_data_set_string(settings, Setting::NowPlayingSource, "");
 		obs_data_set_string(settings, Setting::NowPlayingFormat, "Now Playing: {music} - {artist}");
+		obs_data_set_bool(settings, Setting::NowPlayingToFileEnabled, false);
+		obs_data_set_string(settings, Setting::NowPlayingToFilePath, "");
 	}
 }
 
@@ -154,6 +156,29 @@ std::string SettingsManager::GetNowPlayingFormat()
 	const char *value =
 		obs_data_get_string(settings, Setting::NowPlayingFormat);
 	return (value && *value) ? value : "Now Playing: {music} - {artist}";
+}
+
+void SettingsManager::SetNowPlayingToFileEnabled(bool enabled)
+{
+	obs_data_set_bool(settings, Setting::NowPlayingToFileEnabled, enabled);
+	Save();
+}
+
+bool SettingsManager::GetNowPlayingToFileEnabled()
+{
+	return obs_data_get_bool(settings, Setting::NowPlayingToFileEnabled);
+}
+
+void SettingsManager::SetNowPlayingToFilePath(const std::string &path)
+{
+	obs_data_set_string(settings, Setting::NowPlayingToFilePath, path.c_str());
+	Save();
+}
+
+std::string SettingsManager::GetNowPlayingToFilePath()
+{
+	const char *value = obs_data_get_string(settings, Setting::NowPlayingToFilePath);
+	return (value) ? value : "";
 }
 
 obs_data_array_t *SettingsManager::GetHotkeyData(const char *key) const

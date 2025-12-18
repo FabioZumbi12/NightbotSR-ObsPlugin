@@ -264,6 +264,45 @@ void NightbotAPI::DeleteSong(const QString &songId)
 	});
 }
 
+void NightbotAPI::AddSong(const QString &query)
+{
+	QThreadPool::globalInstance()->start([this, query]() {
+		obs_log_info("[Nightbot SR/API] Adding song with query: %s",
+			     query.toUtf8().constData());
+
+		QJsonObject body;
+		body["q"] = query;
+		QJsonDocument doc(body);
+		std::string post_body =
+			doc.toJson(QJsonDocument::Compact).toStdString();
+
+		HttpRequest request = {
+			"https://api.nightbot.tv/1/song_requests/queue", "POST",
+			post_body};
+		request.headers.push_back("Content-Type: application/json");
+
+		auto response = PerformRequest(request);
+
+		if (response.http_code == 200) {
+			emit songAdded(true, "");
+		} else {
+			QJsonParseError parseError;
+			QJsonDocument errorDoc = QJsonDocument::fromJson(
+				QByteArray::fromStdString(response.body),
+				&parseError);
+			QString finalErrorMsg;
+
+			if (!errorDoc.isNull() && errorDoc.isObject() &&
+			    errorDoc.object().contains("message")) {
+				finalErrorMsg = errorDoc.object()["message"].toString();
+			} else {
+				finalErrorMsg = QString::fromStdString(response.body);
+			}
+			emit songAdded(false, "Error: " + finalErrorMsg);
+		}
+	});
+}
+
 void NightbotAPI::SetSREnabled(bool enabled)
 {
 	QThreadPool::globalInstance()->start([this, enabled]() {

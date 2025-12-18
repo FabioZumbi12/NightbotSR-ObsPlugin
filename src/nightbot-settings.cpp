@@ -10,6 +10,9 @@
 #include <QStyle>
 #include <QGroupBox>
 #include <QLineEdit>
+#include <QFileDialog>
+#include <QFile>
+#include <QFrame>
 
 #include "nightbot-settings.h"
 #include "nightbot-api.h"
@@ -79,6 +82,7 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 
 	QLabel *nowPlayingSourceLabel = new QLabel(
 		get_obs_text("Nightbot.Settings.NowPlayingSource.Label"));
+	nowPlayingSourceLabel->setWordWrap(true);
 
 	nowPlayingSourceComboBox = new QComboBox();
 
@@ -97,14 +101,73 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	nowPlayingFormatLineEdit = new QLineEdit();
 	nowPlayingFormatLineEdit->setPlaceholderText("{music}, {artist}, {user}, {time}");
 
-	nowPlayingLayout->addWidget(nowPlayingSourceLabel);
-	nowPlayingLayout->addWidget(nowPlayingSourceComboBox);
 	nowPlayingLayout->addLayout(formatLabelLayout);
 	nowPlayingLayout->addWidget(nowPlayingFormatLineEdit);
+
+	QHBoxLayout *outputLayout = new QHBoxLayout();
+
+	// --- Seção Fonte de Texto ---
+	QGroupBox *textSourceGroup = new QGroupBox(get_obs_text("Nightbot.Settings.NowPlayingSource"));
+	QVBoxLayout *textSourceLayout = new QVBoxLayout();
+	textSourceGroup->setLayout(textSourceLayout);
+	textSourceLayout->addWidget(nowPlayingSourceLabel);
+	textSourceLayout->addWidget(nowPlayingSourceComboBox);
+	textSourceLayout->addStretch();
+	outputLayout->addWidget(textSourceGroup);
+
+	// --- Seção Salvar para Arquivo ---
+	QGroupBox *saveToFileGroup = new QGroupBox(get_obs_text("Nightbot.Settings.SaveToFile.Title"));
+	QVBoxLayout *saveToFileLayout = new QVBoxLayout();
+	saveToFileGroup->setLayout(saveToFileLayout);
+	saveToFileCheckBox = new QCheckBox(get_obs_text("Nightbot.Settings.SaveToFile.Enable"));
+	saveToFileLayout->addWidget(saveToFileCheckBox);
+
+	QHBoxLayout *filePathLayout = new QHBoxLayout();
+	filePathLineEdit = new QLineEdit();
+	filePathLineEdit->setPlaceholderText(get_obs_text("Nightbot.Settings.SaveToFile.PathPlaceholder"));
+	browseButton = new QPushButton();
+	browseButton->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+	browseButton->setToolTip(get_obs_text("Nightbot.Settings.SaveToFile.SelectFile"));
+	browseButton->setFixedSize(32, filePathLineEdit->sizeHint().height());
+	clearPathButton = new QPushButton();
+	clearPathButton->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
+	clearPathButton->setFixedSize(32, filePathLineEdit->sizeHint().height());
+	clearPathButton->setToolTip(get_obs_text("Nightbot.Settings.SaveToFile.Clear"));
+
+	filePathLayout->addWidget(filePathLineEdit);
+	filePathLayout->addWidget(browseButton);
+	filePathLayout->addWidget(clearPathButton);
+	saveToFileLayout->addLayout(filePathLayout);
+
+	fileErrorLabel = new QLabel();
+	fileErrorLabel->setStyleSheet("color: red;");
+	fileErrorLabel->setWordWrap(true);
+	fileErrorLabel->hide();
+	saveToFileLayout->addWidget(fileErrorLabel);
+	saveToFileLayout->addStretch();
+	outputLayout->addWidget(saveToFileGroup);
+
+	connect(saveToFileCheckBox, &QCheckBox::toggled, this, &NightbotSettingsDialog::onSaveToFileToggled);
+	connect(browseButton, &QPushButton::clicked, this, &NightbotSettingsDialog::onBrowseFileClicked);
+	connect(clearPathButton, &QPushButton::clicked, this, &NightbotSettingsDialog::onClearPathClicked);
+	connect(filePathLineEdit, &QLineEdit::editingFinished, this, &NightbotSettingsDialog::onFilePathChanged);
 
 	mainLayout->addWidget(authGroup);
 	mainLayout->addWidget(queueGroup);
 	mainLayout->addWidget(nowPlayingGroup);
+	mainLayout->addLayout(outputLayout);
+
+	mainLayout->addStretch();
+
+	QFrame *line = new QFrame();
+	line->setFrameShape(QFrame::HLine);
+	line->setFrameShadow(QFrame::Sunken);
+	mainLayout->addWidget(line);
+
+	QLabel *footerLabel = new QLabel(get_obs_text("Nightbot.Settings.Footer"));
+	footerLabel->setOpenExternalLinks(true);
+	footerLabel->setAlignment(Qt::AlignCenter);
+	mainLayout->addWidget(footerLabel);
 
 	PopulateTextSources();
 
@@ -178,6 +241,48 @@ void NightbotSettingsDialog::onRefreshIntervalChanged(int value)
 	SettingsManager::get().SetAutoRefreshInterval(value);
 	if (g_dock_widget)
 		g_dock_widget->UpdateRefreshTimer();
+}
+void NightbotSettingsDialog::onSaveToFileToggled(bool checked)
+{
+	SettingsManager::get().SetNowPlayingToFileEnabled(checked);
+	filePathLineEdit->setEnabled(checked);
+	browseButton->setEnabled(checked);
+	clearPathButton->setEnabled(checked);
+	CheckFilePath();
+}
+
+void NightbotSettingsDialog::onBrowseFileClicked()
+{
+	QString filePath = QFileDialog::getSaveFileName(this, get_obs_text("Nightbot.Settings.SaveToFile.SelectFile"), "", "Text Files (*.txt);;All Files (*)");
+	if (!filePath.isEmpty()) {
+		filePathLineEdit->setText(filePath);
+		onFilePathChanged();
+	}
+}
+
+void NightbotSettingsDialog::onClearPathClicked()
+{
+	filePathLineEdit->clear();
+	onFilePathChanged();
+}
+
+void NightbotSettingsDialog::onFilePathChanged()
+{
+	SettingsManager::get().SetNowPlayingToFilePath(filePathLineEdit->text().toStdString());
+	CheckFilePath();
+}
+
+void NightbotSettingsDialog::CheckFilePath()
+{
+	QString path = filePathLineEdit->text();
+	if (!saveToFileCheckBox->isChecked() || path.isEmpty()) {
+		fileErrorLabel->hide();
+		return;
+	}
+
+	QFile file(path);
+	fileErrorLabel->setVisible(!file.open(QIODevice::WriteOnly));
+	fileErrorLabel->setText(get_obs_text("Nightbot.Settings.SaveToFile.ErrorWritable"));
 }
 
 void NightbotSettingsDialog::PopulateTextSources()
@@ -261,4 +366,12 @@ void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 	PopulateTextSources();
 	nowPlayingFormatLineEdit->setText(
 		QString::fromStdString(SettingsManager::get().GetNowPlayingFormat()));
+
+	bool saveToFile = SettingsManager::get().GetNowPlayingToFileEnabled();
+	saveToFileCheckBox->setChecked(saveToFile);
+	filePathLineEdit->setText(QString::fromStdString(SettingsManager::get().GetNowPlayingToFilePath()));
+	filePathLineEdit->setEnabled(saveToFile);
+	browseButton->setEnabled(saveToFile);
+	clearPathButton->setEnabled(saveToFile);
+	CheckFilePath();
 }
