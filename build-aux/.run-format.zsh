@@ -112,7 +112,7 @@ invoke_formatter() {
           while read -r line; do
             local -a line_tokens=(${(z)line})
             if (( #line_tokens )) {
-              file=${line_tokens[1]//*${project_root}\//}
+              file=${line_tokens[2]//*${project_root}\//}
 
               log_error "${file} requires formatting changes."
             } else {
