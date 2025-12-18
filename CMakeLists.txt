@@ -51,10 +51,15 @@ endif()
 # https://files.jrsoftware.org/is/6/innosetup-6.6.0.exe
 # Encontra o compilador do Inno Setup (opcional)
 set(INNO_SETUP_COMPILER "C:/Program Files (x86)/Inno Setup 6/ISCC.exe")
+set(INNO_ARGS "")
+if(PLUGIN_VERSION)
+    set(INNO_ARGS "/DAppVersion=${PLUGIN_VERSION}")
+endif()
+
 if(ENABLE_INNO_SETUP AND EXISTS "${INNO_SETUP_COMPILER}")
         add_custom_command(TARGET ${_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Executando Inno Setup como $<CONFIG>..."
-        COMMAND "${INNO_SETUP_COMPILER}" "${CMAKE_SOURCE_DIR}/setup.iss" "/DBuildConfig=$<CONFIG>"
+        COMMAND "${INNO_SETUP_COMPILER}" "${CMAKE_SOURCE_DIR}/setup.iss" "/DBuildConfig=$<CONFIG>" ${INNO_ARGS}
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Criando instalador ${_name}-Setup.exe (opcional)..."
     )

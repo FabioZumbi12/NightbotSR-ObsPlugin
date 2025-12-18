@@ -3,7 +3,8 @@ param(
     [ValidateSet('x64')]
     [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
-    [string] $Configuration = 'RelWithDebInfo'
+    [string] $Configuration = 'RelWithDebInfo',
+    [string] $Version = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,6 +51,10 @@ function Build {
     $CmakeArgs = @('--preset', "windows-ci-${Target}")
     $CmakeBuildArgs = @('--build')
     $CmakeInstallArgs = @()
+
+    if ( $Version ) {
+        $CmakeArgs += "-DPLUGIN_VERSION=${Version}"
+    }
 
     if ( $DebugPreference -eq 'Continue' ) {
         $CmakeArgs += ('--debug-output')

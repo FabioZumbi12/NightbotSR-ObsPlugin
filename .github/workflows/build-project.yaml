@@ -1,6 +1,11 @@
 name: Build Project
 on:
   workflow_call:
+    inputs:
+      version:
+        description: 'The version string to build, derived from the Git tag.'
+        required: false
+        type: string
     outputs:
       pluginName:
         description: Project name detected by parsing build spec file
@@ -281,6 +286,7 @@ jobs:
         uses: ./.github/actions/build-plugin
         with:
           target: x64
+          version: ${{ inputs.version }}
           config: ${{ needs.check-event.outputs.config }}
 
       - name: Package Plugin 📀

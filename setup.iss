@@ -11,7 +11,10 @@
 [Setup]
 ; --- Informações Básicas do Aplicativo ---
 AppName=Nightbot SR OBS Plugin
-AppVersion=1.0.0
+#ifndef AppVersion
+  #define AppVersion "0.0.0"
+#endif
+AppVersion={#AppVersion}
 AppPublisher=FabioZumbi12
 AppPublisherURL=https://github.com/FabioZumbi12/NightbotSR-ObsPlugin
 AppSupportURL=https://github.com/FabioZumbi12/NightbotSR-ObsPlugin/issues
