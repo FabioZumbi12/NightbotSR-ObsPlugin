@@ -187,14 +187,18 @@ invoke_formatter() {
   local -i num_failures=0
   if (( check_only )) {
     if (( ${+functions[check_files]} )) {
-      check_files ${source_files}
+      if (( #source_files )) {
+        check_files ${source_files}
+      }
     } else {
       log_error "No format check function defined for formatter '${formatter}'"
       exit 2
     }
   } else {
     if (( ${+functions[format_files]} )) {
-      format_files ${source_files}
+      if (( #source_files )) {
+        format_files ${source_files}
+      }
     } else {
       log_error "No format function defined for formatter '${formatter}'"
       exit 2
