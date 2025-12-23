@@ -3,6 +3,7 @@
 [Read this in Portuguese (Português)](README.pt-BR.md)
 
 # Nightbot Plugin for OBS Studio
+[![GitHub Release](https://img.shields.io/github/v/release/FabioZumbi12/nightbotsr-obsplugin)](https://github.com/FabioZumbi12/nightbotsr-obsplugin/releases/latest)
 
 ## Introduction
 
