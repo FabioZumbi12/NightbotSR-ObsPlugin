@@ -57,6 +57,11 @@ jobs:
             *) echo 'validTag=false' >> $GITHUB_OUTPUT ;;
           esac
 
+      - uses: actions/checkout@v4
+        if: fromJSON(steps.check.outputs.validTag)
+        with:
+          fetch-depth: 0
+
       - name: Download Build Artifacts 📥
         uses: actions/download-artifact@v4
         if: fromJSON(steps.check.outputs.validTag)
@@ -92,6 +97,26 @@ jobs:
             done
           done
 
+      - name: Generate Changelog 📝
+        if: fromJSON(steps.check.outputs.validTag)
+        id: changelog
+        run: |
+          : Generate Changelog 📝
+          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          current_tag="${{ steps.check.outputs.version }}"
+          previous_tag=$(git describe --tags --abbrev=0 ${current_tag}^ 2>/dev/null || true)
+
+          if [[ -z "${previous_tag}" ]]; then
+            logs=$(git log --pretty=format:"- %s (%h)" ${current_tag})
+          else
+            logs=$(git log --pretty=format:"- %s (%h)" ${previous_tag}..${current_tag})
+          fi
+
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          echo -e "### Changes\n${logs}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Generate Checksums 🪪
         if: fromJSON(steps.check.outputs.validTag)
         id: checksums
@@ -119,6 +144,8 @@ jobs:
           name: ${{ needs.build-project.outputs.pluginName }} ${{ steps.check.outputs.version }}
           generate_release_notes: true
           body: |
+            ${{ steps.changelog.outputs.log }}
+
             ${{ steps.checksums.outputs.checksums }}
           files: |
             ${{ github.workspace }}/*.exe
